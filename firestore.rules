@@ -1,0 +1,70 @@
+rules_version = '2';
+
+// Access model: there are no accounts, so "signed in" means an anonymous
+// Firebase user, and anyone with a project link can read and write it. The
+// per-project passcode is enforced in the client, not here — with no real
+// identities there is nothing to scope a rule to, and validating a secret
+// server-side would need a Cloud Function (Blaze plan). Rules below are about
+// shape and sanity, not authorization.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isString(value, maxLen) {
+      return value is string && value.size() <= maxLen;
+    }
+
+    function validProject(data) {
+      return isString(data.name, 80)
+        && data.name.size() > 0
+        && isString(data.description, 200)
+        && (data.passcode == null || isString(data.passcode, 40))
+        && isString(data.color, 9)
+        && data.ownerId is string;
+    }
+
+    function validTodo(data) {
+      return isString(data.title, 200)
+        && data.title.size() > 0
+        && isString(data.notes, 2000)
+        && data.completed is bool
+        && data.priority in ['low', 'medium', 'high']
+        && (data.dueDate == null || data.dueDate is timestamp)
+        && (data.reminderAt == null || data.reminderAt is timestamp)
+        && data.tags is list
+        && data.tags.size() <= 8
+        && data.subtasks is list
+        && data.subtasks.size() <= 50
+        && data.order is number
+        && data.createdBy is string;
+    }
+
+    match /projects/{projectId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && validProject(request.resource.data)
+        && request.resource.data.ownerId == request.auth.uid;
+      // Collaborators may edit a project's details, but ownerId is fixed at
+      // creation so the Home-list "created by me" signal can't be rewritten.
+      allow update: if signedIn()
+        && validProject(request.resource.data)
+        && request.resource.data.ownerId == resource.data.ownerId;
+      allow delete: if signedIn();
+
+      match /todos/{todoId} {
+        allow read: if signedIn();
+        allow create, update: if signedIn() && validTodo(request.resource.data);
+        allow delete: if signedIn();
+      }
+    }
+
+    // Explicit restatement of Firestore's default: anything not matched above
+    // is unreachable from the client.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

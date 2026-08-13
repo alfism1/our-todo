@@ -1,0 +1,99 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --accent-rgb: 99 102 241; /* indigo-500, overridden per project */
+  }
+
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-ink-50 text-ink-900 antialiased dark:bg-ink-950 dark:text-ink-100;
+    /* iOS: keep content clear of the notch / home indicator */
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  *:focus-visible {
+    @apply outline-none ring-2 ring-accent ring-offset-2 ring-offset-ink-50 dark:ring-offset-ink-950;
+  }
+
+  /* Native date/time pickers render an unreadable dark-on-dark icon otherwise */
+  .dark input[type='date']::-webkit-calendar-picker-indicator,
+  .dark input[type='datetime-local']::-webkit-calendar-picker-indicator {
+    filter: invert(1) opacity(0.6);
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-2xl border border-ink-200/70 bg-white shadow-card dark:border-white/10 dark:bg-ink-900;
+  }
+
+  .input {
+    @apply w-full rounded-xl border border-ink-200 bg-white px-3.5 py-2.5 text-sm text-ink-900
+           placeholder:text-ink-400 transition-colors
+           focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/25
+           dark:border-white/10 dark:bg-ink-950/60 dark:text-ink-100 dark:placeholder:text-ink-500;
+  }
+
+  .btn {
+    @apply inline-flex select-none items-center justify-center gap-2 rounded-xl px-4 py-2.5
+           text-sm font-medium transition-all active:scale-[0.97] disabled:pointer-events-none
+           disabled:opacity-50;
+  }
+
+  .btn-primary {
+    @apply btn bg-accent text-white shadow-sm hover:brightness-110;
+  }
+
+  .btn-ghost {
+    @apply btn text-ink-600 hover:bg-ink-100 dark:text-ink-300 dark:hover:bg-white/5;
+  }
+
+  .btn-outline {
+    @apply btn border border-ink-200 bg-white text-ink-700 hover:bg-ink-50
+           dark:border-white/10 dark:bg-transparent dark:text-ink-200 dark:hover:bg-white/5;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium;
+  }
+
+  .skeleton {
+    @apply relative overflow-hidden rounded-lg bg-ink-200/60 dark:bg-white/5;
+  }
+
+  .skeleton::after {
+    @apply absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r
+           from-transparent via-white/40 to-transparent dark:via-white/5;
+    content: '';
+  }
+}
+
+/* Scrollbars: thin and unobtrusive, matching the theme */
+@media (min-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply rounded-full border-[3px] border-solid border-transparent bg-ink-300 bg-clip-content dark:bg-ink-700;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
